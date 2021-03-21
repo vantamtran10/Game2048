@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <link rel="icon" href="<%= BASE_URL %>favicon.ico">
+    <title>Tam Tran - 2048 Game</title>
+      <script src="https://unpkg.com/vue"></script>
+      <script src="https://unpkg.com/vuefire@1.3.0/dist/vuefire.js"></script>
+      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.bundle.min.js" integrity="sha384-b5kHyXgcpbZJO/tY9Ul7kGkf1S0CWuKcCD38l8YkeH8z8QjE0GmW1gYU5S9FOnJ0" crossorigin="anonymous"></script>
+  </head>
+  <body>
+    <noscript>
+      <strong>We're sorry but <%= htmlWebpackPlugin.options.title %> doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
+    </noscript>
+
+    <div class="container">
+        <div class="row pt-5 text-center">
+            <h1>Welcome to 2048 Game</h1>
+        </div>
+        <div class="row">
+            <div class="col-9">
+                <div id="app"></div>
+                <div id="app2"></div>
+            </div>
+            <div class="col-3 pt-5">
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary mb-1" onclick="storeScore();">Save score</button>
+                </div>
+
+                <table class="table table-bordered">
+                    <thead>
+                    <tr>
+                        <th scope="col">Username</th>
+                        <th scope="col">Score</th>
+                        <th scope="col">Date</th>
+                    </tr>
+                    </thead>
+                    <tbody id="usersList">
+
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+
+    </div>
+  </body>
+    <script src="https://www.gstatic.com/firebasejs/8.3.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.3.0/firebase-firestore.js"></script>
+
+  <script>
+      var firebaseConfig = {
+          apiKey: "AIzaSyBP1wH3GkE0z0PVSUjDlfHaHSXQrxoHqas",
+          authDomain: "game2048-6e304.firebaseapp.com",
+          projectId: "game2048-6e304",
+          storageBucket: "game2048-6e304.appspot.com",
+          messagingSenderId: "208502720571",
+          appId: "1:208502720571:web:8a44a6e8daec18656fb41e"
+      };
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore();
+
+      const tbody = document.getElementById("usersList");
+      const renderCompanyFromDocument = (doc) => renderCompany(doc.data().name, doc.data().score, doc.data().date_created);
+      const renderCompany = (docName, docScore, docDateCreated) => {
+          let tr = document.createElement('tr');
+
+          let name = document.createElement('td');
+
+          let score = document.createElement("td");
+
+          let dateCreated = document.createElement("td");
+
+          name.textContent = docName;
+          score.textContent = parseInt(docScore);
+          dateCreated.textContent = convertTimestamp(docDateCreated);
+
+          tr.appendChild(name);
+          tr.appendChild(score);
+          tr.appendChild(dateCreated);
+          tbody.appendChild(tr);
+      }
+
+      function storeScore(){
+          let score = document.getElementById('score').innerText;
+          let username = document.getElementById('username').value;
+
+          if (username === '')
+          {
+              window.alert('Please enter your name!');
+          }
+          else if (score == 0)
+          {
+              window.alert('Your score is 0!');
+          }
+          else if (score != 0 && username != ''){
+              db.collection("userGame2048").add({
+                  name: username,
+                  score: parseInt(score),
+                  date_created: new Date()
+              })
+                  .then((docRef) => {
+                      reloadDB();
+                  })
+                  .catch((error) => {
+                      console.error("Error adding document: ", error);
+                  });
+          }
+      }
+
+      function reloadDB(){
+          let data = db.collection("userGame2048").orderBy("score", "desc");
+          data.get().then(
+              snapshot => {
+                  tbody.innerHTML ='';
+                  snapshot.docs.forEach(
+                      doc => {
+                          renderCompanyFromDocument(doc);
+                      }
+                  );
+              }
+          );
+      }
+      function convertTimestamp(timestamp){
+          let date = timestamp.toDate();
+          let mm = date.getMonth();
+          let dd = date.getDate();
+          let yyyy = date.getFullYear();
+
+          date = mm + '/' + dd + '/' + yyyy;
+          return date;
+      }
+      window.onload = async () => {
+          await reloadDB();
+      }
+
+
+  </script>
+</html>
